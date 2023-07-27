@@ -1,41 +1,22 @@
-In this example, we'll build a full-stack application that uses Retrieval Augmented Generation (RAG) powered by [Pinecone](https://pinecone.io) to deliver accurate and contextually relevant responses in a chatbot.
+As part of an AI Hackathon, the Curio Team built a full-stack application that uses Retrieval Augmented Generation (RAG) powered by [Pinecone](https://pinecone.io) to deliver accurate and contextually relevant responses in a chatbot.
 
 RAG is a powerful tool that combines the benefits of retrieval-based models and generative models. Unlike traditional chatbots that can struggle with maintaining up-to-date information or accessing domain-specific knowledge, a RAG-based chatbot uses a knowledge base created from crawled URLs to provide contextually relevant responses.
 
 Incorporating Vercel's AI SDK into our application will allow us easily set up the chatbot workflow and utilize streaming more efficiently, particularly in edge environments, enhancing the responsiveness and performance of our chatbot.
 
-By the end of this tutorial, you'll have a context-aware chatbot that provides accurate responses without hallucination, ensuring a more effective and engaging user experience. Let's get started on building this powerful tool ([Full code listing](https://github.com/pinecone-io/pinecone-vercel-example/blob/main/package.json)).
+([Full code listing](https://github.com/pinecone-io/pinecone-vercel-example/blob/main/package.json)).
 
-## Step 1: Setting Up Your Next.js Application
+## Step 1: Creating the ChatBot 
+used Vercel SDK to establish the backend and frontend of our chatbot within the Next.js application. By the end of this step, our basic chatbot will be up and running, ready for us to add context-aware capabilities in the following stages. Let's get started.
+https://vercel.com/blog/introducing-the-vercel-ai-sdk 
 
-Next.js is a powerful JavaScript framework that enables us to build server-side rendered and static web applications using React. It's a great choice for our project due to its ease of setup, excellent performance, and built-in features such as routing and API routes.
 
-To create a new Next.js app, run the following command:
+###  Chatbot frontend component
 
-### npx
-
-```bash
-npx create-next-app chatbot
-```
-
-Next, we'll add the `ai` package:
-
-```bash
-npm install ai
-```
-
-You can use the [full list](https://github.com/pinecone-io/pinecone-vercel-example/blob/main/package.json) of dependencies if you'd like to build along with the tutorial.
-
-## Step 2: Create the Chatbot
-
-In this step, we're going to use the Vercel SDK to establish the backend and frontend of our chatbot within the Next.js application. By the end of this step, our basic chatbot will be up and running, ready for us to add context-aware capabilities in the following stages. Let's get started.
-
-### Chatbot frontend component
-
-Now, let's focus on the frontend component of our chatbot. We're going to build the user-facing elements of our bot, creating the interface through which users will interact with our application. This will involve crafting the design and functionality of the chat interface within our Next.js application.
-
-First, we'll create the `Chat` component, that will render the chat interface.
-
+`Chat` component - this renders the chat interface.
+- a simple text input bar
+- react hook to take the submitted message
+  
 ```tsx
 import React, { FormEvent, ChangeEvent } from "react";
 import Messages from "./Messages";
@@ -76,7 +57,8 @@ const Chat: React.FC<Chat> = ({
 export default Chat;
 ```
 
-This component will display the list of messages and the input form for the user to send messages. The `Messages` component to render the chat messages:
+`Messages` component 
+- renders the chat messages 
 
 ```tsx
 import { Message } from "ai";
@@ -102,8 +84,8 @@ export default function Messages({ messages }: { messages: Message[] }) {
   );
 }
 ```
-
-Our main `Page` component will manage the state for the messages displayed in the `Chat` component:
+ `Page` component 
+ - manage the state for the messages displayed in the `Chat` component:
 
 ```tsx
 "use client";
@@ -133,15 +115,15 @@ const Page: React.FC = () => {
 export default Page;
 ```
 
-The useful `useChat` hook will manage the state for the messages displayed in the `Chat` component. It will:
-
+The useful `useChat` hook will manage the state for the messages displayed in the `Chat` component. (Vercel AI SDK package) 
 1. Send the user's message to the backend
 2. Update the state with the response from the backend
 3. Handle any internal state changes (e.g. when the user types a message)
 
 ### Chatbot API endpoint
 
-Next, we'll set up the Chatbot API endpoint. This is the server-side component that will handle requests and responses for our chatbot. We'll create a new file called `api/chat/route.ts` and add the following dependencies:
+Setting up Chatbot API endpoint. This is the server-side component that will handle requests and responses for our chatbot. 
+exists in a new file: `api/chat/route.ts` 
 
 ```ts
 import { Configuration, OpenAIApi } from "openai-edge";
@@ -207,29 +189,23 @@ export async function POST(req: Request) {
 
 Here we deconstruct the messages from the post, and create our initial prompt. We use the prompt and the messages as the input to the `createChatCompletion` method. We then convert the response into a stream and return it to the client. Note that in this example, we only send the user's messages to OpenAI (as opposed to including the bot's messages as well).
 
-<!-- Add snapshot of simple chat -->
+![image](https://github.com/snehasquasher/Curio-Chatbot/assets/65848151/f17b8f83-9f85-4e1e-b7a4-adbcb863d24d)
 
-## Step 3. Adding Context
 
-As we dive into building our chatbot, it's important to understand the role of context. Adding context to our chatbot's responses is key for creating a more natural, conversational user experience. Without context, a chatbot's responses can feel disjointed or irrelevant. By understanding the context of a user's query, our chatbot will be able to provide more accurate, relevant, and engaging responses. Now, let's begin building with this goal in mind.
+## Step 3. Adding Context (Bulk of this Project) 
 
-First, we'll first focus on seeding the knowledge base. We'll create a crawler and a seed script, and set up a crawl endpoint. This will allow us to gather and organize the information our chatbot will use to provide contextually relevant responses.
+Why bother with context? 
+- drastically reduce hallucinations
+- provides more accurate and useful responses
 
-After we've populated our knowledge base, we'll retrieve matches from our embeddings. This will enable our chatbot to find relevant information based on user queries.
-
-Next, we'll wrap our logic into the getContext function and update our chatbot's prompt. This will streamline our code and improve the user experience by ensuring the chatbot's prompts are relevant and engaging.
-
-Finally, we'll add a context panel and an associated context endpoint. These will provide a user interface for the chatbot and a way for it to retrieve the necessary context for each user query.
-
-This step is all about feeding our chatbot the information it needs and setting up the necessary infrastructure for it to retrieve and use that information effectively. Let's get started.
-
-## Seeding the Knowledge Base
-
-Now we'll move on to seeding the knowledge base, the foundational data source that will inform our chatbot's responses. This step involves collecting and organizing the information our chatbot needs to operate effectively. In this guide, we're going to use data retrieved from various websites which we'll later on be able to ask questions about. To do this, we'll create a crawler that will scrape the data from the websites, embed it, and store it in Pinecone.
+A1: Knowledge Base ( The Data Source ) 
+###Crawler
+Used Data retrieved from vairious websites, and later on you can tailor the questions asked accordingly 
+eg.
+- if you would like a weather report, will pass in all of the weather news articles for the ChatBot to crawl
+- VC Deal Sourcing - Popular Data sources like pitchbook, news articles, crunchbase, linkedin profiles etc 
 
 ### Create the crawler
-
-For the sake of brevity, you'll be able to find the full code for the crawler here. Here are the pertinent parts:
 
 ```ts
 class Crawler {
@@ -237,7 +213,7 @@ class Crawler {
   private pages: Page[] = [];
   private queue: { url: string; depth: number }[] = [];
 
-  constructor(private maxDepth = 2, private maxPages = 1) {}
+  constructor(private maxDepth = 2, private maxPages = 10000) {}  // depth, number of links it will click into 
 
   async crawl(startUrl: string): Promise<Page[]> {
     // Add the start URL to the queue
@@ -306,6 +282,19 @@ The helper methods fetchPage, parseHtml, and extractUrls respectively handle fet
 
 To tie things together, we'll create a seed function that will use the crawler to seed the knowledge base. In this portion of the code, we'll initialize the crawl and fetch a given URL, then split it's content into chunks, and finally embed and index the chunks in Pinecone.
 
+###Chunking of Content 
+
+Why Chunk? 
+
+A. Structural Limitations 
+ limitations on the number of tokens we can send for each request
+
+ Depending on the model used, requests can use up to 4097 tokens shared between prompt and completion. If your prompt is 4000 tokens, your completion can be 97 tokens at most. In this implementation we just used the basic fixed size chunking / markdown chunking method. There are many other approaches that could have been explored however. 
+
+1. `RecursiveCharacterTextSplitter` - This splitter splits the text into chunks of a given size, and then recursively splits the chunks into smaller chunks until the chunk size is reached. This method is useful for long documents.
+2. `MarkdownTextSplitter` - This splitter splits the text into chunks based on Markdown headers. This method is useful for documents that are already structured using Markdown. The benefit of this method is that it will split the document into chunks based on the headers, which will be useful for our chatbot to understand the structure of the document. We can assume that each unit of text under a header is an internally coherent unit of information, and when the user asks a question, the retrieved context will be internally coherent as well.
+   
+
 ```ts
 async function seed(
   url: string,
@@ -320,7 +309,7 @@ async function seed(
     // Destructure the options object
     const { splittingMethod, chunkSize, chunkOverlap } = options;
 
-    // Create a new Crawler with depth 1 and maximum pages as limit
+    // Create a new Crawler with depth 1 and maximum pages as limit (this is what we built above) 
     const crawler = new Crawler(1, limit || 100);
 
     // Crawl the given URL and get the pages
@@ -337,7 +326,7 @@ async function seed(
       pages.map((page) => prepareDocument(page, splitter))
     );
 
-    // Create Pinecone index if it does not exist
+    // Create Pinecone index if it does not exist (in free plan on pinecone you can only make one index) 
     await createIndexIfNotExists(pinecone!, indexName, 1536);
     const index = pinecone && pinecone.Index(indexName);
 
@@ -356,10 +345,6 @@ async function seed(
 }
 ```
 
-To chunk the content we'll use one of the following methods:
-
-1. `RecursiveCharacterTextSplitter` - This splitter splits the text into chunks of a given size, and then recursively splits the chunks into smaller chunks until the chunk size is reached. This method is useful for long documents.
-2. `MarkdownTextSplitter` - This splitter splits the text into chunks based on Markdown headers. This method is useful for documents that are already structured using Markdown. The benefit of this method is that it will split the document into chunks based on the headers, which will be useful for our chatbot to understand the structure of the document. We can assume that each unit of text under a header is an internally coherent unit of information, and when the user asks a question, the retrieved context will be internally coherent as well.
 
 ### Add the `crawl` endpoint`
 
@@ -387,6 +372,9 @@ Now our backend is able to crawl a given URL, embed the content and index the em
 ### Get matches from embeddings
 
 To retrieve the most relevant documents from the index, we'll use the `query` function in the Pinecone SDK. This function takes a vector and returns the most similar vectors from the index. We'll use this function to retrieve the most relevant documents from the index, given some embeddings.
+
+Under the hood what ahppens: 
+you provide a vector and retrieve the top-k most similar vectors for each query.
 
 ```ts
 const getMatchesFromEmbeddings = async (
